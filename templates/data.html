@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Data dan cleaning - BBCA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Data harga BBCA dan hasil cleaning</h1>
+  <p>Langkah 1: data harian BBCA.JK dibersihkan, lalu dari return hariannya diambil dua angka yang menjadi bahan simulasi, yaitu rata-rata (mu) dan standar deviasi (sigma).</p>
+</div>
+
+<div class="tiles tiles-wide" id="kpis"></div>
+
+<article class="card">
+  <header class="card-head">
+    <h2><span class="mark mark-cobalt"></span>Harga penutupan BBCA</h2>
+    <p id="priceNote">Harga hari terakhir menjadi harga awal simulasi.</p>
+  </header>
+  <div class="chart-box"><canvas id="priceChart"></canvas></div>
+  <p class="explain explain-cobalt" id="priceExplain"></p>
+</article>
+
+<div class="two-col">
+  <article class="card">
+    <header class="card-head">
+      <h2><span class="mark mark-violet"></span>Bentuk distribusi return harian</h2>
+      <p>Batang adalah data asli setelah cleaning. Garis kuning adalah kurva normal dengan mu dan sigma yang sama.</p>
+    </header>
+    <div class="chart-box"><canvas id="retChart"></canvas></div>
+    <p class="explain explain-violet" id="retExplain"></p>
+  </article>
+
+  <article class="card">
+    <header class="card-head">
+      <h2><span class="mark mark-mint"></span>Tahapan cleaning</h2>
+      <p>Jumlah baris di setiap tahap.</p>
+    </header>
+    <table class="table" id="cleanTable">
+      <thead><tr><th>Tahap</th><th class="num">Baris</th><th class="num">Berubah</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </article>
+</div>
+
+<article class="card">
+  <header class="card-head">
+    <h2><span class="mark mark-coral"></span>Outlier ekstrem yang dibuang</h2>
+    <p id="outNote"></p>
+  </header>
+  <div class="table-scroll">
+    <table class="table" id="outTable">
+      <thead><tr><th>Tanggal</th><th class="num">Harga penutupan</th><th class="num">Return harian</th><th class="num">Volume</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</article>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/data.js') }}"></script>
+{% endblock %}

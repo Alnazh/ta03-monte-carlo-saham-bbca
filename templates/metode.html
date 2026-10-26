@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Metode - Simulasi BBCA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Cara kerja simulasi ini</h1>
+  <p>Aplikasi ini memakai metode Monte Carlo: kita mencoba ribuan kemungkinan pergerakan harga secara acak, lalu menghitung berapa kali kejadian yang kita khawatirkan benar-benar muncul.</p>
+</div>
+
+<ol class="steps">
+  <li class="step step-cobalt">
+    <div class="step-no">1</div>
+    <div class="step-body">
+      <h2>Ambil parameter dari data nyata</h2>
+      <p>Data harian BBCA.JK dari Kaggle dibersihkan (hari libur tanpa transaksi dan outlier ekstrem dibuang). Dari return harian dihitung rata-rata <b>mu</b> dan standar deviasi <b>sigma</b>.</p>
+      <code>return = (harga hari ini - harga kemarin) / harga kemarin</code>
+    </div>
+  </li>
+  <li class="step step-violet">
+    <div class="step-no">2</div>
+    <div class="step-body">
+      <h2>Simulasikan pergerakan harga</h2>
+      <p>Mulai dari harga penutupan terakhir (Rp {{ '{:,.0f}'.format(s0).replace(',', '.') }}). Setiap hari, return diambil acak dari distribusi normal dengan mu dan sigma tadi, lalu harga dihitung berantai. Proses ini diulang untuk ribuan skenario.</p>
+      <code>harga_t = harga_t-1 x (1 + return_acak)</code>
+    </div>
+  </li>
+  <li class="step step-coral">
+    <div class="step-no">3</div>
+    <div class="step-body">
+      <h2>Hitung probabilitas risiko</h2>
+      <p>Kondisi risiko: harga pada hari terakhir lebih rendah dari batas (harga awal dikurangi persentase penurunan). Peluangnya adalah perbandingan skenario yang memenuhi kondisi itu terhadap seluruh skenario.</p>
+      <code>P = jumlah skenario berisiko / total skenario</code>
+    </div>
+  </li>
+</ol>
+
+<div class="two-col">
+  <article class="card">
+    <header class="card-head"><h2><span class="mark mark-sun"></span>Cara membaca hasil</h2></header>
+    <ul class="plain">
+      <li><b>Peluang utama</b> hanya melihat harga di hari terakhir. Kalau harga sempat jatuh lalu naik lagi, itu tidak dihitung.</li>
+      <li><b>Sempat menyentuh batas</b> melihat seluruh jalur: harga cukup turun ke batas di hari mana pun selama horizon.</li>
+      <li><b>Seed</b> mengunci angka acak. Ubah seed untuk melihat seberapa stabil hasilnya, nilainya akan bergeser sedikit.</li>
+      <li><b>Jumlah skenario</b> yang lebih besar membuat hasil lebih stabil (Hukum Bilangan Besar).</li>
+    </ul>
+  </article>
+
+  <article class="card">
+    <header class="card-head"><h2><span class="mark mark-coral"></span>Keterbatasan model</h2></header>
+    <ul class="plain">
+      <li>Return diasumsikan berdistribusi normal dan saling bebas antar hari. Pada data nyata, kejadian ekstrem biasanya lebih sering dari perkiraan kurva normal.</li>
+      <li>Mu dan sigma dianggap tetap selama horizon, padahal volatilitas pasar bisa berubah.</li>
+      <li>Outlier yang dibuang sering berasal dari kejadian pasar yang nyata. Membuangnya membuat risiko terlihat lebih kecil. Bandingkan dengan mematikan opsi buang outlier di halaman Simulasi.</li>
+      <li>Hasil ini bukan prediksi pasti dan bukan saran investasi.</li>
+    </ul>
+  </article>
+</div>
+
+<article class="card note">
+  <header class="card-head"><h2><span class="mark mark-mint"></span>Data</h2></header>
+  <p>Harga saham harian BBCA.JK (Bank Central Asia) dari Kaggle, sejak 2 Januari 2019 sampai 21 Oktober 2026. Seed bawaan simulasi adalah {{ seed }} (NIM).</p>
+</article>
+{% endblock %}

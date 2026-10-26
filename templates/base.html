@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Simulasi Risiko Saham BBCA{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📉</text></svg>">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="{{ url_for('simulasi') }}">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="brand-text">BBCA Monte Carlo</span>
+      </a>
+      <nav class="nav" aria-label="Menu utama">
+        <a href="{{ url_for('simulasi') }}" class="{{ 'active' if page == 'simulasi' }}">Simulasi</a>
+        <a href="{{ url_for('data_page') }}" class="{{ 'active' if page == 'data' }}">Data dan cleaning</a>
+        <a href="{{ url_for('metode') }}" class="{{ 'active' if page == 'metode' }}">Metode</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <p>Tugas Akhir 03 Pemodelan dan Simulasi, NIM 301240010.</p>
+      <p>Hasil simulasi adalah estimasi dari data historis, bukan prediksi pasti dan bukan saran investasi.</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

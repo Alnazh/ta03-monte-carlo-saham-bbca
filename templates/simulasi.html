@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Simulasi Risiko Saham BBCA{% endblock %}
+{% block content %}
+<div class="layout">
+
+  <aside class="panel" aria-label="Pengaturan simulasi">
+    <h2>Atur simulasi</h2>
+    <p class="panel-hint">Ubah angkanya, lalu klik Jalankan simulasi.</p>
+
+    <details class="guide">
+      <summary>Panduan cara mengatur simulasi</summary>
+      <div class="guide-body">
+        <p>Simulasi ini "memainkan" masa depan harga BBCA berkali-kali secara acak, lalu menghitung seberapa sering harga jatuh terlalu dalam.</p>
+        <dl>
+          <dt>Jumlah skenario</dt>
+          <dd>Berapa kali masa depan dimainkan. 10.000 sudah cukup. Makin banyak, hasilnya makin stabil, tetapi hitungnya sedikit lebih lama.</dd>
+          <dt>Horizon waktu</dt>
+          <dd>Berapa hari bursa ke depan yang ingin dilihat. Satu bulan kira-kira 21 hari bursa, jadi 30 hari sekitar 1,4 bulan.</dd>
+          <dt>Batas penurunan</dt>
+          <dd>Seberapa besar penurunan yang dianggap berisiko. Contoh: 10% berarti harga dianggap berisiko jika turun lebih dari 10% dari harga awal.</dd>
+          <dt>Seed</dt>
+          <dd>Kunci angka acak. Seed yang sama selalu memberi hasil yang sama. Ganti seed untuk melihat apakah hasilnya tetap mirip.</dd>
+          <dt>Buang outlier ekstrem</dt>
+          <dd>Aktif: lonjakan harga yang sangat besar tidak ikut dihitung, sehingga risiko terlihat lebih kecil. Mati: semua data dipakai.</dd>
+        </dl>
+        <p class="guide-eg"><b>Contoh:</b> ingin tahu peluang harga turun lebih dari 15% dalam 60 hari? Geser horizon ke 60, batas ke 15, lalu klik Jalankan simulasi.</p>
+      </div>
+    </details>
+
+    <form id="simForm" novalidate>
+      <label class="field">
+        <span class="field-label">Jumlah skenario</span>
+        <input type="number" id="n_sim" name="n_sim" value="10000" min="{{ limits.n_sim[0] }}" max="{{ limits.n_sim[1] }}" step="1000" inputmode="numeric">
+        <span class="field-note">Minimal 5.000. Makin banyak, makin stabil hasilnya.</span>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Horizon waktu <output id="daysOut">30</output> hari</span>
+        <input type="range" id="n_days" name="n_days" value="30" min="{{ limits.n_days[0] }}" max="{{ limits.n_days[1] }}" step="1">
+        <span class="field-note" id="daysNote">Jumlah hari perdagangan ke depan.</span>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Batas penurunan <output id="thrOut">10</output>%</span>
+        <input type="range" id="threshold_pct" name="threshold_pct" value="10" min="1" max="30" step="1">
+        <span class="field-note" id="thrNote">Harga dianggap berisiko jika turun lebih dari ini.</span>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Seed (angka acak awal)</span>
+        <input type="number" id="seed" name="seed" value="{{ seed }}" min="0" max="4294967295" inputmode="numeric">
+        <span class="field-note">Seed yang sama menghasilkan angka yang sama. Bawaan: NIM.</span>
+      </label>
+
+      <label class="switch">
+        <input type="checkbox" id="remove_outlier" name="remove_outlier" checked>
+        <span class="switch-track" aria-hidden="true"></span>
+        <span class="switch-text">Buang return outlier ekstrem
+          <small>Sesuai tahap cleaning di notebook.</small></span>
+      </label>
+
+      <p class="form-error" id="formError" role="alert" hidden></p>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary" id="runBtn">Jalankan simulasi</button>
+        <button type="button" class="btn btn-ghost" id="resetBtn">Kembalikan bawaan</button>
+      </div>
+    </form>
+
+    <dl class="panel-facts">
+      <div><dt>Harga awal</dt><dd>Rp {{ '{:,.0f}'.format(s0).replace(',', '.') }}</dd></div>
+      <div><dt>Penutupan terakhir</dt><dd>{{ last_date }}</dd></div>
+    </dl>
+  </aside>
+
+  <section class="results" aria-live="polite">
+
+    <div class="hero" id="hero">
+      <div class="hero-copy">
+        <h1 id="heroQ">Berapa peluang harga BBCA turun lebih dari 10% dalam 30 hari?</h1>
+        <p class="hero-number" id="probBig" aria-label="Probabilitas">...</p>
+        <p class="hero-sentence" id="probSentence">Menjalankan simulasi.</p>
+        <ul class="chips">
+          <li id="chipTouch"></li>
+          <li id="chipAlt"></li>
+        </ul>
+      </div>
+      <figure class="waffle-wrap">
+        <div class="waffle" id="waffle" role="img" aria-label="Diagram 100 titik peluang"></div>
+        <figcaption><span class="dot dot-risk"></span> turun melewati batas
+          <span class="dot dot-safe"></span> tidak melewati batas
+          <br>1 titik mewakili 1% dari seluruh skenario.</figcaption>
+      </figure>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+    <p class="explain explain-sun" id="tilesExplain"></p>
+
+    <article class="card">
+      <header class="card-head">
+        <h2><span class="mark mark-violet"></span>Jalur harga hasil simulasi</h2>
+        <p>Setiap garis tipis adalah satu kemungkinan pergerakan harga. Pita berwarna menunjukkan rentang tempat sebagian besar jalur berada.</p>
+      </header>
+      <div class="legend" id="fanLegend">
+        <span><i class="sw sw-band-lg"></i>Rentang 90% jalur</span>
+        <span><i class="sw sw-band-sm"></i>Rentang 50% jalur</span>
+        <span><i class="sw sw-median"></i>Median</span>
+        <span><i class="sw sw-thr"></i>Batas risiko</span>
+      </div>
+      <div class="chart-box tall"><canvas id="fanChart"></canvas></div>
+      <p class="explain explain-violet" id="fanExplain"></p>
+    </article>
+
+    <article class="card">
+      <header class="card-head">
+        <h2><span class="mark mark-coral"></span>Sebaran harga pada hari terakhir</h2>
+        <p id="histNote">Batang merah adalah skenario yang harganya jatuh di bawah batas risiko. Peluang = jumlah skenario merah dibagi total skenario.</p>
+      </header>
+      <div class="legend">
+        <span><i class="sw sw-bar-risk"></i>Di bawah batas (risiko)</span>
+        <span><i class="sw sw-bar-ok"></i>Di atas batas</span>
+        <span><i class="sw sw-line-thr"></i>Batas risiko</span>
+        <span><i class="sw sw-line-s0"></i>Harga awal</span>
+      </div>
+      <div class="chart-box"><canvas id="histChart"></canvas></div>
+      <p class="explain explain-coral" id="histExplain"></p>
+    </article>
+
+    <article class="card">
+      <header class="card-head">
+        <h2><span class="mark mark-sun"></span>Peluang untuk beberapa batas penurunan</h2>
+        <p>Dari simulasi yang sama, ini peluang harga turun lebih dari batas tertentu pada hari terakhir.</p>
+      </header>
+      <table class="table" id="probTable">
+        <thead><tr><th>Turun lebih dari</th><th>Batas harga</th><th class="bar-col">Peluang</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="explain explain-sun" id="tableExplain"></p>
+    </article>
+
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>window.APP = { s0: {{ s0 }}, seed: {{ seed }} };</script>
+<script src="{{ url_for('static', filename='js/simulasi.js') }}"></script>
+{% endblock %}
